@@ -35,6 +35,12 @@ dvm run ls
 
 # install node project dependencies
 dvm run npm install
+
+# clean and start a fresh new vm
+dvm reset
+
+# open up a shell to the vm
+dvm shell
 ```
 
 ## advanced usage
@@ -45,3 +51,15 @@ DVM_NAME="python-project" dvm launch
 ```
 ### port access
 If you are running a dev server for an app at port 8080 in your virtual machine and want to view it in your web browser, get the ip address using ```dvm ip``` (e.g. `192.168.64.6`) and then navigate to `http://{IP}:{PORT}` (e.g. `http://192.168.64.1:8080`) in your web browser.
+### configurating install
+By default, DVM installs some common libraries.  You can turn those on or off:
+```
+# don't install nodejs, npm, n, np, pnpm and yarn
+DVM_NODE=false dvm start
+
+# don't install docker and docker-compose
+DVM_DOCKER=false dvm start
+
+# don't install Python
+DVM_PYTHON=false dvm start
+```

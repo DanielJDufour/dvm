@@ -31,19 +31,49 @@ launch_or_start_virtual_machine () {
     echo "starting developer virtual machine"
     multipass start $vm_name;
   else
-    echo "launching developer virtual machine"
+    echo "launching developer virtual machine with name $vm_name"
     multipass launch --name $vm_name --cpus 1 --mem 16GB --disk 20G
+
+    if [ "$DVM_DOCKER" != "false" ]; then
+      # add docker key
+      multipass exec "$vm_name" -- sh -c 'curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg'
+
+      # set up docker repo
+      multipass exec "$vm_name" -- sh -c 'echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null'
+    fi
+
     multipass exec "$vm_name" -- sudo apt-get update
-    multipass exec "$vm_name" -- sudo apt-get install -y nodejs npm python
+
+    if [ "$DVM_NODE" != "false" ]; then
+      multipass exec "$vm_name" -- sudo apt-get install -y nodejs npm
+    fi
+
+    if [ "$DVM_PYTHON" != "false" ]; then
+      multipass exec "$vm_name" -- sudo apt-get install -y python
+    fi
+
+    if [ "$DVM_DOCKER" != "false" ]; then
+      # install docker-compose v1
+      multipass exec "$vm_name" -- sudo apt-get install -y docker-ce docker-ce-cli docker-compose containerd.io
+
+      # install docker compose v2
+      multipass exec "$vm_name" -- mkdir -p /home/ubuntu/.docker/cli-plugins/
+      multipass exec "$vm_name" -- curl -SL https://github.com/docker/compose/releases/download/v2.3.4/docker-compose-linux-x86_64 -o /home/ubuntu/.docker/cli-plugins/docker-compose
+      multipass exec "$vm_name" -- chmod +x /home/ubuntu/.docker/cli-plugins/docker-compose
+      multipass exec "$vm_name" -- sudo chown ubuntu /var/run/docker.sock
+      multipass exec "$vm_name" -- docker compose version
+    fi
 
     # allow lots of file watching
     multipass exec "$vm_name" -- sudo /bin/su -c "echo 'fs.inotify.max_user_watches=1048576' >> /etc/sysctl.conf"
 
-    # install node packages
-    multipass exec "$vm_name" -- sudo npm i -g n np pnpm yarn
+    if [ "$DVM_NODE" != "false" ]; then
+      # install node packages
+      multipass exec "$vm_name" -- sudo npm i -g n np pnpm yarn
 
-    # update to latest node
-    multipass exec "$vm_name" -- sudo n latest
+      # update to latest node
+      multipass exec "$vm_name" -- sudo n latest
+    fi
 
     multipass mount $repo_path "$vm_name:$repo_path"
   fi;
@@ -67,9 +97,21 @@ elif [ $1 == "ip" ]; then
   if [ "$vm_state" == "Running" ]; then
     multipass info --format=yaml $vm_name | grep -A1 ipv4 | tail -n 1 | awk '{print $NF}'
   fi;
+elif [ $1 == "reset" ]; then
+  if [ "$vm_exists" == "true" ]; then
+    multipass delete -p $vm_name
+    vm_exists="false"
+  fi;
+  launch_or_start_virtual_machine
 elif [ $1 == "run" ]; then
   launch_or_start_virtual_machine
   statement="${@:2}"
   multipass exec "$vm_name" -- sh -c "cd $PWD && sh -c \"$statement\""
   exit 0;
+elif [ $1 == "shell" ]; then
+  launch_or_start_virtual_machine
+  multipass shell "$vm_name"
+else
+  echo "dvm: unknown command \"$1\""
+  exit 1
 fi
