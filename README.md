@@ -14,10 +14,12 @@ prevent catastrophic supply chain vulnerability attacks
 ```bash
 # inside /home/user/repos/project
 
+# get the vm name
 dvm name
 > code-project-0e486d1716
 
 # start vm
+# if the vm doesn't exist, create it
 dvm start
 
 # stop vm
@@ -26,7 +28,7 @@ dvm stop
 # stop, delete and purge vm
 dvm clean
 
-# get ip address of the virtual machine
+# get ip address of the vm
 dvm ip
 > 192.168.64.6
 
