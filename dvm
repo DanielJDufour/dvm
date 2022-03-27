@@ -1,0 +1,72 @@
+#!/bin/bash -e
+
+repo_path=$(git rev-parse --show-toplevel)
+repo_path_hash=$(git rev-parse --show-toplevel | shasum | head -c10)
+repo_name=$(basename $repo_path)
+
+if [ -z "$DVM_NAME" ]; then
+    vm_name="code-$repo_name-$repo_path_hash"
+else
+    vm_name=$DVM_NAME
+fi
+
+if [ $1 == "name" ]; then
+  echo "$vm_name"
+  exit 0;
+fi
+
+if multipass info $vm_name > /dev/null 2>&1; then
+  vm_exists="true"
+  vm_state=$(multipass info --format=yaml $vm_name | grep state | awk '{print $NF}')
+else
+  vm_exists="false"
+  vm_state="na"
+fi
+
+launch_or_start_virtual_machine () {
+  if [ "$vm_exists" == "true" ]; then
+    echo "starting developer virtual machine"
+    multipass start $vm_name;
+  else
+    echo "launching developer virtual machine"
+    multipass launch --name $vm_name --cpus 1 --mem 16GB --disk 20G
+    multipass exec "$vm_name" -- sudo apt-get update
+    multipass exec "$vm_name" -- sudo apt-get install -y nodejs npm python
+
+    # allow lots of file watching
+    multipass exec "$vm_name" -- sudo /bin/su -c "echo 'fs.inotify.max_user_watches=1048576' >> /etc/sysctl.conf"
+
+    # install node packages
+    multipass exec "$vm_name" -- sudo npm i -g n np pnpm yarn
+
+    # update to latest node
+    multipass exec "$vm_name" -- sudo n latest
+
+    multipass mount $repo_path "$vm_name:$repo_path"
+  fi;
+}
+
+if [ $1 == "start" ]; then
+  launch_or_start_virtual_machine
+  exit 0;
+elif [ $1 == "stop" ]; then 
+  if [ "$vm_exists" == "true" ]; then
+    multipass stop $vm_name
+    echo "stopped developer virtual machine"
+  fi;
+elif [ $1 == "clean" ]; then
+  # deletes then purges vm 
+  if [ "$vm_exists" == "true" ]; then
+    multipass delete -p $vm_name
+  fi;
+  exit 0;
+elif [ $1 == "ip" ]; then
+  if [ "$vm_state" == "Running" ]; then
+    multipass info --format=yaml $vm_name | grep -A1 ipv4 | tail -n 1 | awk '{print $NF}'
+  fi;
+elif [ $1 == "run" ]; then
+  launch_or_start_virtual_machine
+  statement="${@:2}"
+  multipass exec "$vm_name" -- sh -c "cd $PWD && sh -c \"$statement\""
+  exit 0;
+fi
