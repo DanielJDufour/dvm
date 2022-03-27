@@ -4,6 +4,9 @@
 ## purpose
 prevent catastrophic supply chain vulnerability attacks
 
+## prerequisite
+- install multipass from Canonical: https://multipass.run/
+
 ## usage
 ```bash
 # inside /home/user/repos/project.git
