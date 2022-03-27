@@ -4,8 +4,11 @@ repo_path=$(git rev-parse --show-toplevel)
 repo_path_hash=$(git rev-parse --show-toplevel | shasum | head -c10)
 repo_name=$(basename $repo_path)
 
+# vm names cannot have _ in them
+repo_name_slug=$(echo $repo_name | sed s/_/-/g)
+
 if [ -z "$DVM_NAME" ]; then
-    vm_name="code-$repo_name-$repo_path_hash"
+    vm_name="code-$repo_name_slug-$repo_path_hash"
 else
     vm_name=$DVM_NAME
 fi
