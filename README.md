@@ -4,12 +4,15 @@
 ## purpose
 prevent catastrophic supply chain vulnerability attacks
 
-## prerequisite
-- install multipass from Canonical: https://multipass.run/
+## install
+- install [multipass](https://multipass.run/) from Canonical
+- download [the dvm file](https://github.com/DanielJDufour/dvm/blob/main/dvm)
+- make the file executable: `chmod +x dvm`
+- copy the file to some place on your path: `cp dvm /usr/local/bin/dvm` 
 
 ## usage
 ```bash
-# inside /home/user/repos/project.git
+# inside /home/user/repos/project
 
 dvm name
 > code-project-0e486d1716
