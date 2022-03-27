@@ -62,6 +62,6 @@ DVM_NODE=false dvm start
 # don't install docker and docker-compose
 DVM_DOCKER=false dvm start
 
-# don't install Python
+# don't install Python and pip
 DVM_PYTHON=false dvm start
 ```
