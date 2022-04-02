@@ -1,6 +1,39 @@
 #!/bin/bash -e
 
+VERSION="0.0.1"
+
+if [ $1 == "version" ]; then
+  echo "$VERSION"
+  exit 0;
+fi
+
+if [ $1 == "help" ]; then
+  echo "Usage: dvm [options]"
+  echo ""
+  echo "Options:"
+  echo "  clean:     stop, delete and purge repo vm"
+  echo "  ip:        get ip address of repo vm"
+  echo "  name:      log name of repo vm"
+  echo "  list:      list all developer virtual machines (including those outside repo)"
+  echo "  reset:     delete then launch a new fresh intance of the vm"
+  echo "  run:       run command inside vm, such as: dvm run npm install"
+  echo "  shell:     load bash shell inside the vm"
+  echo "  start:     start vm (and if the vm doesn't exist, create it)"
+  echo "  stop:      stop vm"
+  echo "  version:   log version of dvm cli"
+  exit 0;
+fi
+
+
 repo_path=$(git rev-parse --show-toplevel)
+
+# source .dvm if it exists
+dot_dvm_path="$repo_path/.dvm"
+if [ -f "$dot_dvm_path" ]; then
+  echo "dvm: loading .dvm ($dot_dvm_path)"
+  source "$dot_dvm_path"
+fi
+
 repo_path_hash=$(git rev-parse --show-toplevel | shasum | head -c10)
 repo_name=$(basename $repo_path)
 
@@ -8,13 +41,19 @@ repo_name=$(basename $repo_path)
 repo_name_slug=$(echo $repo_name | sed s/_/-/g)
 
 if [ -z "$DVM_NAME" ]; then
-    vm_name="code-$repo_name_slug-$repo_path_hash"
+    vm_name="dvm-$repo_name_slug-$repo_path_hash"
 else
     vm_name=$DVM_NAME
 fi
 
 if [ $1 == "name" ]; then
   echo "$vm_name"
+  exit 0;
+fi
+
+if [ $1 == "list" ]; then
+  multipass list | grep $vm_name
+  multipass list | grep dvm | grep -v $vm_name
   exit 0;
 fi
 
@@ -32,7 +71,10 @@ launch_or_start_virtual_machine () {
     multipass start $vm_name;
   else
     echo "launching developer virtual machine with name $vm_name"
-    multipass launch --name $vm_name --cpus 1 --mem 16GB --disk 20G
+    multipass launch --name $vm_name --cpus ${DVM_CPUS:-1} --mem ${DVM_MEM:-16GB} --disk ${DVM_DISK:-20G}
+
+    # undo automatic home mount
+    multipass unmount $vm_name
 
     if [ "$DVM_DOCKER" != "false" ]; then
       # add docker key
@@ -49,7 +91,7 @@ launch_or_start_virtual_machine () {
     fi
 
     if [ "$DVM_PYTHON" != "false" ]; then
-      multipass exec "$vm_name" -- sudo apt-get install -y python
+      multipass exec "$vm_name" -- sudo apt-get install -y python python3-pip
     fi
 
     if [ "$DVM_DOCKER" != "false" ]; then
@@ -65,7 +107,7 @@ launch_or_start_virtual_machine () {
     fi
 
     # allow lots of file watching
-    multipass exec "$vm_name" -- sudo /bin/su -c "echo 'fs.inotify.max_user_watches=1048576' >> /etc/sysctl.conf"
+    multipass exec "$vm_name" -- sudo /bin/su -c "echo 'fs.inotify.max_user_watches=1048576' >> /etc/sysctl.conf && sudo sysctl -p"
 
     if [ "$DVM_NODE" != "false" ]; then
       # install node packages
@@ -110,7 +152,10 @@ elif [ $1 == "run" ]; then
   exit 0;
 elif [ $1 == "shell" ]; then
   launch_or_start_virtual_machine
-  multipass shell "$vm_name"
+  multipass exec "$vm_name" -- sh -c "cd $PWD && bash"
+elif [ $1 == "remount" ]; then
+  multipass unmount $vm_name
+  multipass mount $repo_path "$vm_name:$repo_path"
 else
   echo "dvm: unknown command \"$1\""
   exit 1

@@ -49,9 +49,34 @@ dvm reset
 
 # open up a shell to the vm
 dvm shell
+
+# list virtual machines
+# filter by current vm name and names that start with "dvm"
+dvm list
+> code-project-0e486d1716  Running           192.168.64.10     Ubuntu 20.04 LTS
 ```
 
 ## advanced usage
+### environment file
+By default, dvm will look for a `.dvm` file in the root of the git repository.  It will then source that file each time you run a dvm command.
+Here's an example of a .dvm for a small JavaScript library:
+```
+DMV_NAME="random-project-name"
+
+# lower the memory to make sure the library works in low memory environments
+DVM_MEM=4GB
+
+# make sure there's enough room for all the dependencies
+DMV_DISK=50GB
+
+# we aren't using Docker for this repo
+DVM_DOCKER=false
+
+# turn off Python support
+# because it is a JavaScript project
+DVM_PYTHON=false
+```
+
 ### shared virtual machines
 A virtual machine is automatically created by using your repo name and hash of the path in order to avoid conflicts when two repos on your computer have the same name.  If you would like multiple repos to share the same virtual machine, you can set the `DVM_NAME` environmental variable.  For example, to launch a virtual machine with the name "python-project":
 ```bash
@@ -87,7 +112,6 @@ DVM_DOCKER=false dvm start
 # don't install Python and pip
 DVM_PYTHON=false dvm start
 ```
-
 
 ### support
 If you have any questions or security concerns, please email the author of dvm at daniel.j.dufour@gmail.com.
