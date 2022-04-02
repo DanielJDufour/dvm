@@ -4,6 +4,13 @@
 ## purpose
 prevent catastrophic supply chain vulnerability attacks
 
+## features
+- simple install (it's basically just a bash script)
+- automatic git repo detection
+- easily configure cpus, memory, and disk space
+- automatic loading of env file
+- automatically installs NodeJS and Python, so you don't have to
+
 ## background
 On March 18, 2022, I read the news about a [big supply chain attack](https://arstechnica.com/information-technology/2022/03/sabotage-code-added-to-popular-npm-package-wiped-files-in-russia-and-belarus/) from an open-source JavaScript package that would delete documents from a computer if it detected an IP address in Belarus or Russia.  It was a wake up call for me to improve my security, because what would have happened if a similar attack had been performed looking for an IP addresses inside my country?  This is the motivation for creating this library.  So you can develop in confidence without worrying that a dependency of a dependency might delete or mess with your files.
 
