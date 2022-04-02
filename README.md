@@ -17,7 +17,7 @@ The dvm library basically uses [multipass](https://multipass.run/) to create a v
 - copy the file to some place on your path: `cp dvm /usr/local/bin/dvm` 
 
 ## usage
-```bash
+```
 # inside /home/user/repos/project
 
 # get the vm name
@@ -54,6 +54,9 @@ dvm shell
 # filter by current vm name and names that start with "dvm"
 dvm list
 > code-project-0e486d1716  Running           192.168.64.10     Ubuntu 20.04 LTS
+
+# print cli usage documentation
+dvm help
 ```
 
 ## advanced usage
