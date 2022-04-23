@@ -41,7 +41,7 @@ repo_name=$(basename $repo_path)
 repo_name_slug=$(echo $repo_name | sed s/_/-/g)
 
 if [ -z "$DVM_NAME" ]; then
-    vm_name="dvm-$repo_name_slug-$repo_path_hash"
+    vm_name=$(echo "dvm-$repo_name_slug-$repo_path_hash" | sed 's/\./-/')
 else
     vm_name=$DVM_NAME
 fi
